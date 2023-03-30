@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express();
 const cors = require('cors')
+//--------- CONSULTA FECHA -------//
+const moment = require('moment');
 //----------Para encriptar password----------//
 const bcrypt = require('bcrypt');
 //----------Para generar token-------------//
@@ -16,14 +18,66 @@ router.get('/', (req, res) => {
 });
 // ------------------------------------------------------------------------------------------------------//
 //// devuele todos los inquilinos /////
-router.get('/inquilinos', (req, res) => {
-    mysqlConeccion.query('SELECT * FROM inquilinos', (err, registro) => {
+router.get('/inquilinos',verificarToken, (req, res) => {
+    jwt.verify(req.token, 'InKey', (error) => {
+        if (error) {
+            res.sendStatus(403);
+        } else {
+    mysqlConeccion.query('SELECT *,DATE_FORMAT(fecha_inicio,"%Y-%m-%d") as fecha FROM inquilinos',(err, registro) => {
         if (!err) {
             res.json(registro);
         } else {
             console.log(err)
         }
-    })
+      })
+    }
+  })
+});
+//// Into inquilinos /////
+router.post('/inquilinos', verificarToken, (req, res) => {
+    const { nombre, numero_telefono, fecha_inicio } = req.body;
+    const nombreRegex = /^[A-Za-zÁáÉéÍíÓóÚúÜüÑñ\s]+$/; // Expresión regular que sólo coincide con caracteres de texto
+    if (!moment(fecha_inicio, 'YYYY-MM-DD', true).isValid()) {
+        res.status(400).json({
+            status: false,
+            mensaje: 'La fecha proporcionada no es válida. Por favor proporcione una fecha válida en el formato YYYY-MM-DD'
+        });
+    } else if (!nombre.match(nombreRegex)) {
+        res.status(400).json({
+            status: false,
+            mensaje: 'El campo "nombre" solo puede contener letras y espacios'
+        });
+    } else {
+        jwt.verify(req.token, 'InKey', (error) => {
+            if (error) {
+                res.sendStatus(403);
+            } else {
+                let querySelect = `SELECT COUNT(*) AS count FROM inquilinos WHERE nombre = '${nombre}' AND numero_telefono = '${numero_telefono}' AND fecha_inicio = '${fecha_inicio}'`;
+                mysqlConeccion.query(querySelect, (errSelect, resultSelect) => {
+                    if (!errSelect && resultSelect[0].count === 0) {
+                        let queryInsert = `INSERT INTO inquilinos (nombre, numero_telefono, fecha_inicio) VALUES ('${nombre}', '${numero_telefono}', '${fecha_inicio}')`;
+                        mysqlConeccion.query(queryInsert, (errInsert, resultInsert) => {
+                            if (!errInsert) {
+                                res.json({
+                                    status: true,
+                                    mensaje: 'Se agregó nuevo inquilino'
+                                });
+                            } else {
+                                console.log(errInsert);
+                            }
+                        });
+                    } else if (!errSelect) {
+                        res.json({
+                            status: false,
+                            mensaje: 'Ya existe este inquilino'
+                        });
+                    } else {
+                        console.log(errSelect);
+                    }
+                });
+            }
+        });
+    }
 });
 // ------------------------------------------------------------------------------------------------------//
 //// devuele todos los pagos /////
