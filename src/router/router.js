@@ -37,6 +37,8 @@ router.get('/inquilinos',verificarToken, (req, res) => {
 router.post('/inquilinos', verificarToken, (req, res) => {
     const { nombre, numero_telefono, fecha_inicio } = req.body;
     const nombreRegex = /^[A-Za-zÁáÉéÍíÓóÚúÜüÑñ\s]+$/; // Expresión regular que sólo coincide con caracteres de texto
+    const telefonoRegex = /^\d{1,3}\d{9,10}$/; // Valida solo numero de telefono
+    
     if (!moment(fecha_inicio, 'YYYY-MM-DD', true).isValid()) {
         res.status(400).json({
             status: false,
@@ -47,7 +49,12 @@ router.post('/inquilinos', verificarToken, (req, res) => {
             status: false,
             mensaje: 'El campo "nombre" solo puede contener letras y espacios'
         });
-    } else {
+    } else if (!numero_telefono.match(telefonoRegex)) {
+            res.status(400).json({
+                status: false,
+                mensaje: 'El campo "TELEFONO" debe tener solo numeros'
+            });
+        } else {    
         jwt.verify(req.token, 'InKey', (error) => {
             if (error) {
                 res.sendStatus(403);
