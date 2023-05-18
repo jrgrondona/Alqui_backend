@@ -33,6 +33,28 @@ router.get('/inquilinos',verificarToken, (req, res) => {
     }
   })
 });
+//// Para eliminar registros de Inquilino /////
+router.delete('/delete/:id_inquilinos', verificarToken, (req, res) => {
+    let id_inquilinos = req.params.id_inquilinos;
+    jwt.verify(req.token, 'InKey', (error) => {
+        if (error) {
+            res.sendStatus(403);
+        } else {
+            let query = `DELETE FROM inquilinos WHERE id_inquilinos = '${id_inquilinos}'`;
+            mysqlConeccion.query(query, (err) => {
+                if (!err) {
+                    res.json({
+                        status: true,
+                        mensaje: 'SE ELIMINO EL REGISTRO DE LA BASE DE DATOS !'
+                    })
+                    // res.send('Se eliminó físicamente el id venta: ' + id_inquilinos);
+                } else {
+                    res.send('El error es: ' + err);
+                }
+            })
+        }
+    })
+});
 //// Into inquilinos /////
 router.post('/inquilinos', verificarToken, (req, res) => {
     const { nombre, numero_telefono, fecha_inicio } = req.body;
