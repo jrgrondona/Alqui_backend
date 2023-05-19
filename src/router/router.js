@@ -23,7 +23,7 @@ router.get('/inquilinos',verificarToken, (req, res) => {
         if (error) {
             res.sendStatus(403);
         } else {
-    mysqlConeccion.query('SELECT *,DATE_FORMAT(fecha_inicio,"%Y-%m-%d") as fecha FROM inquilinos',(err, registro) => {
+    mysqlConeccion.query('SELECT *,DATE_FORMAT(fecha_inicio,"%Y-%m-%d") as fecha, DATE_FORMAT(fecha_finalizacion,"%Y-%m-%d") as fecha_finalizacion FROM inquilinos',(err, registro) => {
         if (!err) {
             res.json(registro);
         } else {
